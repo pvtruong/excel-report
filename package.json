@@ -1,6 +1,6 @@
 {
   "name": "excel-report",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Create report from excel template",
   "main": "excelReport.js",
   "dependencies": {
@@ -11,7 +11,7 @@
   "devDependencies": {},
   "repository": {
     "type": "git",
-    "url": "https://github.com/mafintosh/excel-report.git"
+    "url": "https://github.com/pvtruong/excel-report.git"
   },
   "author": "Pham Van Truong (@truongpv)",
   "license": "MIT",
