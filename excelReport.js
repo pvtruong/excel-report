@@ -18,17 +18,38 @@ module.exports = function(file_template,data,callback){
 		var zip = new nodezip(dataTmp, {base64: false, checkCRC32: true});
 		//obtains sharedStrings
 		eletree.parse(zip.files["xl/sharedStrings.xml"].asText()).getroot().findall("si/t").forEach(function(t){
-			addSharedStrings(t.text);
+			var ts = t.text;
+			for(var key in data){
+				var reg = new RegExp("{{" + key + "}}")
+				var v = data[key].toString();
+				ts = ts.replace(reg,v);
+			}
+			addSharedStrings(ts);
+		});
+		//parse sheet1
+		var sheet1 = zip.files["xl/worksheets/sheet1.xml"].asText();
+		//merge cells
+		var mergeCells ={}
+		var refs={}
+		eletree.parse(sheet1).findall("./mergeCells/mergeCell").forEach(function(mergeCell){
+			var ref = mergeCell.attrib.ref
+			if(ref){
+				var d_ref =ref.replace(":","_");
+				ref.split(":").forEach(function(r){
+					mergeCells[r] = d_ref;
+				})
+				refs[d_ref] = ref
+			}
 		});
 		//create table
 		var table =[]
-		var sheet1 = zip.files["xl/worksheets/sheet1.xml"].asText();
 		var t_i =0;
 		var pre_row_i=0;
 		var now_row_i=0;
 		eletree.parse(sheet1).findall("./sheetData/row").forEach(function(row){
 			var first_row=false;
 			var table_name;
+			var filter;
 			now_row_i = Number(row.attrib.r);
 			//identify first row and name of table
 			var cells = row.findall("c");
@@ -45,6 +66,17 @@ module.exports = function(file_template,data,callback){
 							//first row
 							first_row =true;
 							table_name = /{{tb:(.*)\.(.*)}}/.exec(s)[1];
+							var ff = /{{tb:(.*)\.(.*)}}/.exec(s)[2].split("|");
+							if(ff.length>1){
+								filter = "{" + ff[1] + "}"
+								try{
+									filter = eval("(" + filter + ")")
+								}catch(e){
+									console.log("can't parse JSON: ",filter)
+									filter ={zzz:'zzz'} //
+								}
+								
+							}
 							//break;
 						}else{
 							if(/{{(.*)}}/g.test(s)){
@@ -74,7 +106,15 @@ module.exports = function(file_template,data,callback){
 			//create rows
 			if(first_row && table_name && data[table_name]){
 				var i_r = t_i + (now_row_i - pre_row_i)
-				data[table_name].forEach(function(d){
+				var rows_data;
+				if(!filter){
+					rows_data = data[table_name]
+				}else{
+					rows_data = underscore.filter(data[table_name],function(r){
+						return underscore.isMatch(r,filter);
+					})
+				}
+				rows_data.forEach(function(d){
 					var rtable =new eletree.Element("row");
 					rtable.set("r",i_r)
 					if(row.attrib.spans){
@@ -100,7 +140,8 @@ module.exports = function(file_template,data,callback){
 								s = Number(s);
 								s = sharedStrings[s].toString();
 								if(/{{tb:(.*)\.(.*)}}/.test(s)){
-									var field = /{{tb:(.*)\.(.*)}}/.exec(s)[2];
+									var ff = /{{tb:(.*)\.(.*)}}/.exec(s)[2].split("|");
+									var field = ff[0]
 									var v = d[field];
 									if(v){
 										if(underscore.isDate(v)){
@@ -136,7 +177,15 @@ module.exports = function(file_template,data,callback){
 				t_i = t_i + (now_row_i - pre_row_i)
 				row.set("r",t_i);
 				row._children.forEach(function(c){
-					c.set("r",c.attrib.r.substring(0,1) + t_i);
+					var newCell = c.attrib.r.substring(0,1) + t_i;
+					c.set("r",newCell);
+					var oldCell = c.attrib.r.substring(0,1) + now_row_i;
+					var r_merge = mergeCells[oldCell]; 
+					if(r_merge){
+						var ref = refs[r_merge]
+						ref = ref.replace(oldCell,newCell);
+						refs[r_merge] = ref;
+					}
 				});
 				table.push(row);
 
@@ -163,13 +212,23 @@ module.exports = function(file_template,data,callback){
 		zip.file("xl/sharedStrings.xml",eletree.tostring(root))
 		//save table
 		root = eletree.parse(sheet1).getroot()
+		//sheetData
 		var sheetData = root.find("sheetData");
 		var sheetData_children = sheetData.getchildren();
-		sheetData.delSlice(0, sheetData_children.length);
-		
+		sheetData.delSlice(0, sheetData_children.length);		
 		table.forEach(function(r){
 			sheetData.append(r);
 		});
+		//mergeCells
+		var megeCellsR = root.find("mergeCells");
+		var megeCellsR_children = megeCellsR.getchildren();
+		megeCellsR.delSlice(0, megeCellsR_children.length);	
+		for(var key in refs){
+			var r =new eletree.Element("mergeCell ");
+			r.attrib.ref =refs[key] 
+			megeCellsR.append(r);
+		}
+		//save sheet1
 		zip.file("xl/worksheets/sheet1.xml",eletree.tostring(root));
 		// Get binary data
 		var result = zip.generate({base64: false, checkCRC32: true});

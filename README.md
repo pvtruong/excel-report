@@ -21,7 +21,12 @@ excelReport(template_file,data,function(error,binary){
 	//use binary
 })
 ```
-
+please view example
+```
+##Logs
+Version 0.0.5:
+- Support merge cells
+- Support filter: {{tb:detail.qty|number:1}}
 ## License
 
 MIT

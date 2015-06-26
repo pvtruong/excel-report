@@ -1,22 +1,47 @@
 {
   "name": "excel-report",
-  "version": "0.0.2",
+  "version": "0.0.5",
   "description": "Create report from excel template",
   "main": "excelReport.js",
   "dependencies": {
-	"node-zip":"latest",
-	"elementtree":"latest",
-	"underscore":"latest"
+    "node-zip": "latest",
+    "elementtree": "latest",
+    "underscore": "latest"
   },
   "devDependencies": {},
   "repository": {
     "type": "git",
     "url": "https://github.com/pvtruong/excel-report.git"
   },
-  "author": "Pham Van Truong (@truongpv)",
+  "author": {
+    "name": "Pham Van Truong",
+    "url": "@truongpv"
+  },
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/pvtruong/excel-report/issues"
   },
-  "homepage": "https://github.com/pvtruong/excel-report"
+  "homepage": "https://github.com/pvtruong/excel-report",
+  "gitHead": "75acab49c038e8519788707b960a4b0ade740964",
+  "_id": "excel-report@0.0.3",
+  "scripts": {},
+  "_shasum": "9fe8c4ef0ef3320855a33fb925d3084375e490ab",
+  "_from": "excel-report@latest",
+  "_npmVersion": "1.4.14",
+  "_npmUser": {
+    "name": "truongpv",
+    "email": "invncur@gmail.com"
+  },
+  "maintainers": [
+    {
+      "name": "truongpv",
+      "email": "invncur@gmail.com"
+    }
+  ],
+  "dist": {
+    "shasum": "9fe8c4ef0ef3320855a33fb925d3084375e490ab",
+    "tarball": "http://registry.npmjs.org/excel-report/-/excel-report-0.0.3.tgz"
+  },
+  "directories": {},
+  "_resolved": "https://registry.npmjs.org/excel-report/-/excel-report-0.0.3.tgz"
 }
