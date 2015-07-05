@@ -2,11 +2,23 @@ var nodezip = require("node-zip");
 var eletree = require("elementtree");
 var fs = require("fs");
 var underscore = require("underscore");
+function escapeRegExp(string) {
+	return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+}
+function replaceAll(string, find, replace) {
+  if(!string || !find) return ""
+  return string.replace(new RegExp(escapeRegExp(find), 'g'), replace);
+}
 module.exports = function(file_template,data,callback){
 	var sharedStrings = []
+	var calcChain = []
 	var addSharedStrings = function(v){
 		sharedStrings.push(v);
 		return sharedStrings.length-1;
+	}
+	var addCalcChain = function(calc){
+		calcChain.push(calc);
+		return calcChain.length-1;
 	}
 	if(!fs.existsSync(file_template)){
 		return callback(new Error("Template file not exists"));
@@ -19,11 +31,6 @@ module.exports = function(file_template,data,callback){
 		//obtains sharedStrings
 		eletree.parse(zip.files["xl/sharedStrings.xml"].asText()).getroot().findall("si/t").forEach(function(t){
 			var ts = t.text;
-			for(var key in data){
-				var reg = new RegExp("{{" + key + "}}")
-				var v = data[key].toString();
-				ts = ts.replace(reg,v);
-			}
 			addSharedStrings(ts);
 		});
 		//parse sheet1
@@ -79,12 +86,25 @@ module.exports = function(file_template,data,callback){
 							}
 							//break;
 						}else{
-							if(/{{(.*)}}/g.test(s)){
-								var field = /{{(.*)}}/g.exec(s)[1];
+							var ms = s.match(/{{([a-zA-Z0-9_]+)}}/gi)
+							if(ms && ms.length>0){
+								var fields =[]
+								ms.forEach(function(m){
+									var exec =  /{{([a-zA-Z0-9_]+)}}/gi.exec(m);
+									fields.push(exec[1])
+								})
 								//string
-								if(underscore.isString(data[field])){
-									sharedStrings[i] = data[field];
+								if(ms[0]!==s){
+									var str =s
+									fields.forEach(function(field){
+										if(data[field]){
+											str = replaceAll(str,"{{" + field + "}}",data[field]);
+										}
+										
+									})
+									sharedStrings[i] = str
 								}else{
+									field = fields[0]
 									//number
 									if(underscore.isNumber(data[field])){
 										v.text = data[field];
@@ -95,9 +115,14 @@ module.exports = function(file_template,data,callback){
 											var originDate = new Date(Date.UTC(1899,11,30));
 											v.text = (data[field] - originDate) / (24 * 60 * 60 * 1000);
 											cell.set('t','');
+										}else{
+											if(data[field]){
+												sharedStrings[i] = replaceAll(s,"{{" + field + "}}",data[field]);
+											}
 										}
 									}
 								}
+								
 							}
 						}
 					}
@@ -114,13 +139,17 @@ module.exports = function(file_template,data,callback){
 						return underscore.isMatch(r,filter);
 					})
 				}
+				var stt =0
 				rows_data.forEach(function(d){
+					stt = stt+1;
 					var rtable =new eletree.Element("row");
 					rtable.set("r",i_r)
 					if(row.attrib.spans){
 						rtable.set("spans",row.attrib.spans);
 					}
+					
 					row._children.forEach(function(cell){
+						
 						var ctable =  new eletree.Element("c");
 						ctable.set("r",cell.attrib.r.substring(0,1) + i_r);
 						
@@ -132,39 +161,43 @@ module.exports = function(file_template,data,callback){
 						if(cell._children.length>0){
 							var vtable = new eletree.Element("v");
 							ctable.append(vtable);
-							vtable.text = cell._children[0].text
-							
-							var s = cell._children[0].text;
+							var s = cell.find("v").text;
+							vtable.text = s;
 							var t =  cell.attrib.t;
 							if(t=='s' && s){
 								s = Number(s);
-								s = sharedStrings[s].toString();
-								if(/{{tb:(.*)\.(.*)}}/.test(s)){
-									var ff = /{{tb:(.*)\.(.*)}}/.exec(s)[2].split("|");
-									var field = ff[0]
-									var v = d[field];
-									if(v){
-										if(underscore.isDate(v)){
-											var originDate = new Date(Date.UTC(1899,11,30));
-											vtable.text = (v - originDate) / (24 * 60 * 60 * 1000);
-										}else{
-											if(underscore.isNumber(v)){
-												vtable.text = v;
-											}else{
-												vtable.text = addSharedStrings(v);
-												ctable.set("t","s");
-											}
-										}
-									}else{
-										vtable.text = addSharedStrings("");
-										ctable.set("t","s");
-									}
-									
+								s = sharedStrings[s];
+								if(s=='{{stt}}'){
+									vtable.text = stt;
 								}else{
-									if(cell.attrib.t){
-										ctable.set("t",cell.attrib.t);
+									if(/{{tb:(.*)\.(.*)}}/.test(s)){
+										var ff = /{{tb:(.*)\.(.*)}}/.exec(s)[2].split("|");
+										var field = ff[0]
+										var v = d[field];
+										if(v){
+											if(underscore.isDate(v)){
+												var originDate = new Date(Date.UTC(1899,11,30));
+												vtable.text = (v - originDate) / (24 * 60 * 60 * 1000);
+											}else{
+												if(underscore.isNumber(v)){
+													vtable.text = v;
+												}else{
+													vtable.text = addSharedStrings(v);
+													ctable.set("t","s");
+												}
+											}
+										}else{
+											vtable.text = addSharedStrings("");
+											ctable.set("t","s");
+										}
+										
+									}else{
+										if(cell.attrib.t){
+											ctable.set("t",cell.attrib.t);
+										}
 									}
 								}
+								
 							}
 						}
 					});
@@ -177,14 +210,20 @@ module.exports = function(file_template,data,callback){
 				t_i = t_i + (now_row_i - pre_row_i)
 				row.set("r",t_i);
 				row._children.forEach(function(c){
-					var newCell = c.attrib.r.substring(0,1) + t_i;
+					var oldCell = c.attrib.r;
+					var newCell = oldCell.substring(0,1) + t_i;
 					c.set("r",newCell);
-					var oldCell = c.attrib.r.substring(0,1) + now_row_i;
+					//merge
 					var r_merge = mergeCells[oldCell]; 
 					if(r_merge){
 						var ref = refs[r_merge]
 						ref = ref.replace(oldCell,newCell);
 						refs[r_merge] = ref;
+					}
+					//function
+					var f = c.find("f");
+					if(f){
+						addCalcChain(c.attrib.r)
 					}
 				});
 				table.push(row);
@@ -198,8 +237,29 @@ module.exports = function(file_template,data,callback){
 			children = root.getchildren();
 		
 		root.delSlice(0, children.length);
-
 		sharedStrings.forEach(function(str) {
+			str = str.toString()
+			for(var key in data){
+				var v = data[key];
+				if(v==undefined || v==null){
+					v ="";
+				}
+				str = replaceAll(str,"{{" + key + "}}",v);
+				
+			}
+			//replace by '' if don't have value
+			str = str.replace(/({{[a-zA-Z0-9_]+}})/gi,'');
+			var regex =/c\((.*)\)/gi 
+			var exec = regex.exec(str)
+			if(exec && exec[1]){
+				try{
+					str = eval("(" + exec[1] +  ")")
+				}catch(e){
+					
+				}
+			}
+			
+			
 			var si = new eletree.Element("si"),
 				t  = new eletree.Element("t");
 			t.text = str;
@@ -210,6 +270,19 @@ module.exports = function(file_template,data,callback){
 		root.attrib.count = sharedStrings.length;
 		root.attrib.uniqueCount = sharedStrings.length;
 		zip.file("xl/sharedStrings.xml",eletree.tostring(root))
+		//save calcChain
+		if(zip.files["xl/calcChain.xml"]){
+			root = eletree.parse(zip.files["xl/calcChain.xml"].asText()).getroot(),
+			children = root.getchildren();
+			root.delSlice(0, children.length);
+			calcChain.forEach(function(str) {
+				var c = new eletree.Element("c")
+				c.attrib.i =1
+				c.attrib.r = str;
+				root.append(c);
+			});
+			zip.file("xl/calcChain.xml",eletree.tostring(root))
+		}
 		//save table
 		root = eletree.parse(sheet1).getroot()
 		//sheetData
@@ -221,12 +294,14 @@ module.exports = function(file_template,data,callback){
 		});
 		//mergeCells
 		var megeCellsR = root.find("mergeCells");
-		var megeCellsR_children = megeCellsR.getchildren();
-		megeCellsR.delSlice(0, megeCellsR_children.length);	
-		for(var key in refs){
-			var r =new eletree.Element("mergeCell ");
-			r.attrib.ref =refs[key] 
-			megeCellsR.append(r);
+		if(megeCellsR){
+			var megeCellsR_children = megeCellsR.getchildren();
+			megeCellsR.delSlice(0, megeCellsR_children.length);	
+			for(var key in refs){
+				var r =new eletree.Element("mergeCell ");
+				r.attrib.ref =refs[key] 
+				megeCellsR.append(r);
+			}
 		}
 		//save sheet1
 		zip.file("xl/worksheets/sheet1.xml",eletree.tostring(root));
