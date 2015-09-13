@@ -27,6 +27,8 @@ please view example
 Version 0.0.5:
 - Support merge cells
 - Support filter: {{tb:detail.qty|number:1}}
+Version 0.1.1
+- Fixed value =0
 ## License
 
 MIT

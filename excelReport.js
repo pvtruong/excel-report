@@ -63,9 +63,9 @@ module.exports = function(file_template,data,callback){
 			for(var c =0;c<cells.length;c++){
 				var cell = cells[c];
 				var t = cell.attrib.t;
-				var v = cell.find("v");
-				if(v){
-					var i = v.text;
+				var v_cell = cell.find("v");
+				if(v_cell){
+					var i = v_cell.text;
 					if(t=="s" && i){
 						i = Number(i);
 						var s = sharedStrings[i];
@@ -107,18 +107,24 @@ module.exports = function(file_template,data,callback){
 									field = fields[0]
 									//number
 									if(underscore.isNumber(data[field])){
-										v.text = data[field];
+										v_cell.text = data[field].toString();
 										cell.set('t','');
 									}else{
 										//date
 										if(underscore.isDate(data[field])){
 											var originDate = new Date(Date.UTC(1899,11,30));
-											v.text = (data[field] - originDate) / (24 * 60 * 60 * 1000);
+											v_cell.text = (data[field] - originDate) / (24 * 60 * 60 * 1000);
 											cell.set('t','');
 										}else{
-											if(data[field]){
-												sharedStrings[i] = replaceAll(s,"{{" + field + "}}",data[field]);
+											if(data[field]==0){
+												v_cell.text = "0";
+												cell.set('t','');
+											}else{
+												if(data[field]){
+													sharedStrings[i] = replaceAll(s,"{{" + field + "}}",data[field]);
+												}
 											}
+											
 										}
 									}
 								}
@@ -175,20 +181,27 @@ module.exports = function(file_template,data,callback){
 										var field = ff[0]
 										var v = d[field];
 										if(v){
-											if(underscore.isDate(v)){
+											if(v && underscore.isDate(v)){
 												var originDate = new Date(Date.UTC(1899,11,30));
 												vtable.text = (v - originDate) / (24 * 60 * 60 * 1000);
 											}else{
 												if(underscore.isNumber(v)){
-													vtable.text = v;
+													vtable.text = v.toString();
+													ctable.set('t','');
 												}else{
 													vtable.text = addSharedStrings(v);
 													ctable.set("t","s");
 												}
 											}
 										}else{
-											vtable.text = addSharedStrings("");
-											ctable.set("t","s");
+											if(v==0){
+												vtable.text = "0";
+												ctable.set('t','');
+											}else{
+												vtable.text = addSharedStrings("");
+												ctable.set("t","s");
+											}
+											
 										}
 										
 									}else{

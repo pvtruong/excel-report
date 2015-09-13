@@ -1,6 +1,6 @@
 {
   "name": "excel-report",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Create report from excel template",
   "main": "excelReport.js",
   "dependencies": {
@@ -11,7 +11,7 @@
   "devDependencies": {},
   "repository": {
     "type": "git",
-    "url": "https://github.com/pvtruong/excel-report.git"
+    "url": "git+https://github.com/pvtruong/excel-report.git"
   },
   "author": {
     "name": "Pham Van Truong",
@@ -23,11 +23,11 @@
   },
   "homepage": "https://github.com/pvtruong/excel-report",
   "gitHead": "75acab49c038e8519788707b960a4b0ade740964",
-  "_id": "excel-report@0.0.3",
+  "_id": "excel-report@0.1.0",
   "scripts": {},
-  "_shasum": "9fe8c4ef0ef3320855a33fb925d3084375e490ab",
+  "_shasum": "a3261032eb10f1010946ae1a7af7cd87b594be21",
   "_from": "excel-report@latest",
-  "_npmVersion": "1.4.14",
+  "_npmVersion": "2.10.1",
   "_npmUser": {
     "name": "truongpv",
     "email": "invncur@gmail.com"
@@ -39,9 +39,11 @@
     }
   ],
   "dist": {
-    "shasum": "9fe8c4ef0ef3320855a33fb925d3084375e490ab",
-    "tarball": "http://registry.npmjs.org/excel-report/-/excel-report-0.0.3.tgz"
+    "shasum": "a3261032eb10f1010946ae1a7af7cd87b594be21",
+    "tarball": "http://registry.npmjs.org/excel-report/-/excel-report-0.1.0.tgz"
   },
   "directories": {},
-  "_resolved": "https://registry.npmjs.org/excel-report/-/excel-report-0.0.3.tgz"
+  "_resolved": "https://registry.npmjs.org/excel-report/-/excel-report-0.1.0.tgz",
+  "_nodeVersion": "0.12.4",
+  "readme": "ERROR: No README data found!"
 }
