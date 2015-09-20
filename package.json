@@ -1,6 +1,6 @@
 {
   "name": "excel-report",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "description": "Create report from excel template",
   "main": "excelReport.js",
   "dependencies": {
@@ -22,28 +22,10 @@
     "url": "https://github.com/pvtruong/excel-report/issues"
   },
   "homepage": "https://github.com/pvtruong/excel-report",
-  "gitHead": "75acab49c038e8519788707b960a4b0ade740964",
-  "_id": "excel-report@0.1.0",
-  "scripts": {},
-  "_shasum": "a3261032eb10f1010946ae1a7af7cd87b594be21",
-  "_from": "excel-report@latest",
-  "_npmVersion": "2.10.1",
-  "_npmUser": {
-    "name": "truongpv",
-    "email": "invncur@gmail.com"
-  },
   "maintainers": [
     {
       "name": "truongpv",
       "email": "invncur@gmail.com"
     }
-  ],
-  "dist": {
-    "shasum": "a3261032eb10f1010946ae1a7af7cd87b594be21",
-    "tarball": "http://registry.npmjs.org/excel-report/-/excel-report-0.1.0.tgz"
-  },
-  "directories": {},
-  "_resolved": "https://registry.npmjs.org/excel-report/-/excel-report-0.1.0.tgz",
-  "_nodeVersion": "0.12.4",
-  "readme": "ERROR: No README data found!"
+  ]
 }
