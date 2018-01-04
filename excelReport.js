@@ -7,7 +7,7 @@ var async = require("async");
 // load a locale
 numeral.register('locale', 'vn', {
     delimiters: {
-        thousands: ' ',
+        thousands: '.',
         decimal: ','
     },
     abbreviations: {
@@ -34,7 +34,7 @@ function escapeRegExp(string) {
 	return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
 }
 function replaceAll(string, find, replace) {
-  
+
   if(!string || !find) return "";
   if(underscore.isArray(replace) || underscore.isObject(replace)){
 	  return string.replace(new RegExp(escapeRegExp(find), 'g'), "");
@@ -62,7 +62,7 @@ function fillData(zip,data,begin_row,stt_sharedString,callback){
 	var sheet1 = zip.files["xl/worksheets/sheet1.xml"].asText();
 	//merge cells
 	var mergeCells ={};
-	
+
 	eletree.parse(sheet1).findall("./mergeCells/mergeCell").forEach(function(mergeCell){
 		var ref = mergeCell.attrib.ref
 		if(ref){
@@ -86,16 +86,18 @@ function fillData(zip,data,begin_row,stt_sharedString,callback){
 		now_row_i = Number(row.attrib.r) + begin_row;
 		//identify first row and name of table
 		var cells = row.findall("c");
-		for(var c =0;c<cells.length;c++){
+		for(var c =0;c<cells.length-1;c++){
 			var cell = cells[c];
 			var t = cell.attrib.t;
 			var v_cell = cell.find("v");
 			if(v_cell){
 				var i = v_cell.text;
-				if(t=="s" && i){
+				var s;
+				if(i){
 					i = Number(i);
-					var s = sharedStrings[i];
-					
+					s = sharedStrings[i];
+				}
+				if(t=="s" && s){
 					if(/{{tb:(.*)\.(.*)}}/.test(s)){
 						//first row
 						first_row =true;
@@ -109,7 +111,7 @@ function fillData(zip,data,begin_row,stt_sharedString,callback){
 								console.log("can't parse JSON: ",filter);
 								filter ={zzz:'zzz'} ;
 							}
-							
+
 						}
 						//break;
 					}else{
@@ -124,7 +126,7 @@ function fillData(zip,data,begin_row,stt_sharedString,callback){
 							if(ms[0]!==s){
 								var str =s;
 								fields.forEach(function(field){
-									
+
 									if(data[field]){
 										if(underscore.isNumber(data[field])){
 											str = replaceAll(str,"{{" + field + "}}",numeral(data[field]).format());
@@ -134,15 +136,15 @@ function fillData(zip,data,begin_row,stt_sharedString,callback){
 											}else{
 												str = replaceAll(str,"{{" + field + "}}",data[field]);
 											}
-											
+
 										}
-										
+
 									}
-									
+
 								})
 								sharedStrings[i] = str;
 								v_cell.text = (i+stt_sharedString).toString();
-								
+
 							}else{
 								field = fields[0];
 								//number
@@ -155,7 +157,7 @@ function fillData(zip,data,begin_row,stt_sharedString,callback){
 										var originDate = new Date(Date.UTC(1899,11,30));
 										var v = data[field];
 										v = new Date(Date.UTC(v.getFullYear(),v.getMonth(),v.getDate()));
-										
+
 										v_cell.text = (v - originDate) / (24 * 60 * 60 * 1000);
 										//cell.set('t','');
 										delete cell.attrib["t"];
@@ -171,11 +173,11 @@ function fillData(zip,data,begin_row,stt_sharedString,callback){
 												cell.set('t','s');
 											}
 										}
-										
+
 									}
 								}
 							}
-							
+
 						}
 					}
 				}
@@ -194,7 +196,7 @@ function fillData(zip,data,begin_row,stt_sharedString,callback){
 						})
 					}
 					let stt =0
-					
+
 					for(let r of rows_data){
 						stt = stt+1;
 						r.stt = stt;
@@ -202,10 +204,10 @@ function fillData(zip,data,begin_row,stt_sharedString,callback){
 						//
 						t_i =i_r;
 						i_r=i_r + 1;
-						
+
 					}
 					//console.log("begin fill rows",new Date());
-					async.map(rows_data,function(d,callback2){
+					async.mapSeries(rows_data,function(d,callback2){
 						let stt = d.stt;
 						let i_r = d.i_r;
 						var rtable =new eletree.Element("row");
@@ -213,11 +215,11 @@ function fillData(zip,data,begin_row,stt_sharedString,callback){
 						if(row.attrib.spans){
 							rtable.set("spans",row.attrib.spans);
 						}
-						
+
 						row._children.forEach(function(cell){
 							var ctable =  new eletree.Element("c");
 							ctable.set("r",cell.attrib.r.substring(0,1) + i_r);
-							
+
 							if(cell.attrib.s){
 								ctable.set("s",cell.attrib.s);
 							}
@@ -227,7 +229,7 @@ function fillData(zip,data,begin_row,stt_sharedString,callback){
 								var vtable = new eletree.Element("v");
 								ctable.append(vtable);
 								var s = cell.find("v").text;
-								
+
 								vtable.text = s;
 								var t =  cell.attrib.t;
 								if(t=='s' && s){
@@ -240,7 +242,7 @@ function fillData(zip,data,begin_row,stt_sharedString,callback){
 											var ff = /{{tb:(.*)\.(.*)}}/.exec(s)[2].split("|");
 											var field = ff[0]
 											var v = d[field];
-											
+
 											if(v){
 												if(v && underscore.isDate(v)){
 													var originDate = new Date(Date.UTC(1899,11,30));
@@ -266,16 +268,16 @@ function fillData(zip,data,begin_row,stt_sharedString,callback){
 													vtable.text = addSharedStrings("");
 													ctable.set("t","s");
 												}
-												
+
 											}
-											
+
 										}else{
 											if(cell.attrib.t){
 												ctable.set("t",cell.attrib.t);
 											}
 										}
 									}
-									
+
 								}
 							}
 						});
@@ -287,11 +289,11 @@ function fillData(zip,data,begin_row,stt_sharedString,callback){
 						//console.log("end fill rows",new Date());
 						callback();
 					});
-					
+
 				}else{
 					callback1();
 				}
-				
+
 			},
 			create_others:(callback)=>{
 				if(!(first_row && table_name && data[table_name])){
@@ -302,7 +304,7 @@ function fillData(zip,data,begin_row,stt_sharedString,callback){
 						var newCell = oldCell.substring(0,1) + t_i;
 						c.set("r",newCell);
 						//merge
-						var r_merge = mergeCells[oldCell]; 
+						var r_merge = mergeCells[oldCell];
 						if(r_merge){
 							var ref = refs[r_merge];
 							ref = ref.replace(oldCell,newCell);
@@ -345,17 +347,17 @@ function fillData(zip,data,begin_row,stt_sharedString,callback){
 					v = moment(v).format('L');
 				}
 				str = replaceAll(str,"{{" + key + "}}",v);
-				
+
 				callback();
 			},function(e,rs){
 				str = str.replace(/({{[a-zA-Z0-9_]+}})/gi,'');
-				let regex =/c\((.*)\)/gi 
+				let regex =/c\((.*)\)/gi
 				let exec = regex.exec(str)
 				if(exec && exec[1]){
 					try{
 						str = eval("(" + exec[1] +  ")");
 					}catch(e){
-						
+
 					}
 				}
 				let si = new eletree.Element("si"),
@@ -367,17 +369,17 @@ function fillData(zip,data,begin_row,stt_sharedString,callback){
 			});
 		},function(e,rs){
 			//console.log("end create sharedStrings",new Date());
-			//result	
+			//result
 			callback(null,{
 				table:table,
 				sharedStrings:fn_sharedStrings,
 				calcChain:calcChain,
 				refs:refs,
 				end_row:end_row
-				
+
 			})
 		});
-	})	
+	})
 }
 module.exports = function(file_template,datas,callback){
 	//check exists of template file
@@ -400,7 +402,7 @@ module.exports = function(file_template,datas,callback){
 		}
 		var begin_row =0;
 		//console.log("begin fill data",new Date())
-		async.map(datas,(data,callback)=>{
+		async.mapSeries(datas,(data,callback)=>{
 			fillData(zip,data,begin_row,sharedStrings.length,function(e,rs){
 				if(e) return callback(e);
 				sharedStrings = sharedStrings.concat(rs.sharedStrings);
@@ -444,7 +446,7 @@ module.exports = function(file_template,datas,callback){
 			//sheetData
 			var sheetData = root.find("sheetData");
 			var sheetData_children = sheetData.getchildren();
-			sheetData.delSlice(0, sheetData_children.length);		
+			sheetData.delSlice(0, sheetData_children.length);
 			table.forEach(function(r){
 				sheetData.append(r);
 			});
@@ -452,7 +454,7 @@ module.exports = function(file_template,datas,callback){
 			var megeCellsR = root.find("mergeCells");
 			if(megeCellsR){
 				var megeCellsR_children = megeCellsR.getchildren();
-				megeCellsR.delSlice(0, megeCellsR_children.length);	
+				megeCellsR.delSlice(0, megeCellsR_children.length);
 				for(var key in refs){
 					var r =new eletree.Element("mergeCell ");
 					r.attrib.ref =refs[key] ;
@@ -467,12 +469,8 @@ module.exports = function(file_template,datas,callback){
 			//console.log("create binary data",new Date())
 			callback(null,result);
 		});
-		
-		
-		
+
+
+
 	});
-	
-	
-}					
-								
-								
+}
