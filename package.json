@@ -1,6 +1,6 @@
 {
   "name": "excel-report",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "description": "Create report from excel template",
   "main": "excelReport.js",
   "dependencies": {
