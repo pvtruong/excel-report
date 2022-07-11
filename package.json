@@ -1,14 +1,15 @@
 {
   "name": "excel-report",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "description": "Create report from excel template",
   "main": "excelReport.js",
   "dependencies": {
-    "node-zip": "latest",
     "elementtree": "latest",
-    "underscore": "latest",
-	"numeral": "latest",
-	"moment":"latest"
+    "moment": "latest",
+    "moment-timezone": "^0.5.34",
+    "node-zip": "latest",
+    "numeral": "latest",
+    "underscore": "latest"
   },
   "devDependencies": {},
   "repository": {
