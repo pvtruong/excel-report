@@ -1,9 +1,9 @@
-var nodezip = require("node-zip");
-var eletree = require("elementtree");
-var fs = require("fs");
-var underscore = require("underscore");
-var numeral = require('numeral');
-var async = require("async");
+const nodezip = require("node-zip");
+const eletree = require("elementtree");
+const fs = require("fs");
+const underscore = require("underscore");
+const numeral = require('numeral');
+const async = require("async");
 // load a locale
 numeral.register('locale', 'vn', {
     delimiters: {
@@ -27,8 +27,11 @@ numeral.register('locale', 'vn', {
 // switch between locales
 numeral.locale('vn');
 //
-var moment = require('moment');
-moment.locale("vi");
+const Moment = require('moment-timezone');
+Moment.locale("vi");
+const moment = (time)=>{
+	return Moment.tz(time,Moment().tz());
+}
 //
 /**
  * Removes invalid XML characters from a string
@@ -420,11 +423,12 @@ function fillData(zip,data,begin_row,stt_sharedString,callback){
 		});
 	})
 }
-module.exports = function(file_template,datas,callback){
+module.exports = function(file_template,datas,callback,options={timezone:'Asia/Ho_Chi_Minh'}){
 	//check exists of template file
 	if(!fs.existsSync(file_template)){
 		return callback(new Error("Template file not exists"));
 	}
+	Moment.tz.setDefault(options.timezone || 'Asia/Ho_Chi_Minh');
 	//read template file
 	fs.readFile(file_template,function(error,dataTmp){
 		if(error) return callback(error);
