@@ -1,13 +1,14 @@
-'use strict';
+"use strict";
+
+var GenericWorker = require("./stream/GenericWorker");
+
 exports.STORE = {
     magic: "\x00\x00",
-    compress: function(content, compressionOptions) {
-        return content; // no compression
+    compressWorker : function () {
+        return new GenericWorker("STORE compression");
     },
-    uncompress: function(content) {
-        return content; // no compression
-    },
-    compressInputType: null,
-    uncompressInputType: null
+    uncompressWorker : function () {
+        return new GenericWorker("STORE decompression");
+    }
 };
-exports.DEFLATE = require('./flate');
+exports.DEFLATE = require("./flate");
